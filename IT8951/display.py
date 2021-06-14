@@ -9,6 +9,9 @@ try:
     from .interface import EPD
 except ModuleNotFoundError:
     EPD = None
+import time
+import asyncio
+
 
 class AutoDisplay:
     '''
@@ -80,13 +83,13 @@ class AutoDisplay:
 
         self._rotate_method = methods[rotate]
 
-    def draw_full(self, mode):
+    async def draw_full(self, mode):
         '''
         Write the full image to the device, and display it using mode
         '''
         frame = self._get_frame_buf()
 
-        self.update(frame.tobytes(), (0,0), self.display_dims, mode)
+        await self.update(frame.tobytes(), (0,0), self.display_dims, mode)
 
         if self.track_gray:
             if mode == DisplayModes.DU:
@@ -97,15 +100,13 @@ class AutoDisplay:
 
         self.prev_frame = frame
 
-    def draw_partial(self, mode, diff_box=None):
+    async def draw_partial(self, mode, diff_box=None):
         '''
         Write only the rectangle bounding the pixels of the image that have changed
         since the last call to draw_full or draw_partial
         '''
-
-        begin = time.time()
         if self.prev_frame is None:  # first call since initialization
-            self.draw_full(mode)
+            await self.draw_full(mode)
         
         frame = self._get_frame_buf()
 
@@ -138,22 +139,20 @@ class AutoDisplay:
             xy = (diff_box[0], diff_box[1])
             dims = (diff_box[2]-diff_box[0], diff_box[3]-diff_box[1])
             
-            end = time.time()
-            print("computing diff box: ", end-begin)
             begin = time.time()
-            self.update(buf.tobytes(), xy, dims, mode, pixel_format=PixelModes.M_4BPP)
+            await self.update(buf.tobytes(), xy, dims, mode, pixel_format=PixelModes.M_4BPP)
             end = time.time()
             print("computing update: ", end-begin)
 
         self.prev_frame = frame
 
-    def clear(self):
+    async def clear(self):
         '''
         Clear display, device image buffer, and frame buffer (e.g. at startup)
         '''
         # set frame buffer to all white
         self.frame_buf.paste(0xFF, box=(0, 0, self.width, self.height))
-        self.draw_full(DisplayModes.INIT)
+        await self.draw_full(DisplayModes.INIT)
 
     @classmethod
     def _compute_diff_box(cls, a, b, round_to=2):
@@ -231,7 +230,7 @@ class AutoEPDDisplay(AutoDisplay):
         self.epd = epd
         AutoDisplay.__init__(self, self.epd.width, self.epd.height, **kwargs)
 
-    def update(self, data, xy, dims, mode, pixel_format=PixelModes.M_4BPP):
+    async def update(self, data, xy, dims, mode, pixel_format=PixelModes.M_4BPP):
 
         # these modes only use two pixels, so use a more dense packing for them
         # TODO: 2BPP doesn't seem to refresh correctly?
@@ -241,14 +240,13 @@ class AutoEPDDisplay(AutoDisplay):
         #     pixel_format = PixelModes.M_4BPP
 
         # send image to controller
-        self.epd.wait_display_ready()
+        await self.epd.wait_display_ready()
         self.epd.load_img_area(
             data,
             xy=xy,
             dims=dims,
             pixel_format=pixel_format
         )
-
         # display sent image
         self.epd.display_area(
             xy,

@@ -3,7 +3,8 @@ from . import constants
 from .constants import Commands, Registers, PixelModes
 from .spi import SPI
 
-from time import sleep
+import asyncio
+
 
 class EPD:
     '''
@@ -138,9 +139,9 @@ class EPD:
     def sleep(self):
         self.spi.write_cmd(Commands.SLEEP)
 
-    def wait_display_ready(self):
+    async def wait_display_ready(self):
         while(self.read_register(Registers.LUTAFSR)):
-            sleep(0.01)
+            await asyncio.sleep(0.01)
 
     def _load_img_start(self, endian_type, pixel_format, rotate_mode):
         arg = (endian_type << 8) | (pixel_format << 4) | rotate_mode
