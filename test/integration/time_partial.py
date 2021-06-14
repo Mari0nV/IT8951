@@ -37,7 +37,7 @@ class Profiler:
 
 def main():
     print('Initializing...')
-    display = AutoEPDDisplay(vcom=-2.06)
+    display = AutoEPDDisplay(vcom=-1.36, device=0)
 
     display.clear()
 

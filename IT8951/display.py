@@ -33,6 +33,8 @@ class AutoDisplay:
             self.frame_buf = Image.new('L', (height, width), 0xFF)
         else:
             self.frame_buf = Image.new('L', (width, height), 0xFF)
+        
+        self.frame_buf = self.frame_buf.transpose(Image.FLIP_LEFT_RIGHT)
 
         # keep track of what we have updated,
         # so that we can automatically do partial updates of only the
@@ -95,24 +97,26 @@ class AutoDisplay:
 
         self.prev_frame = frame
 
-    def draw_partial(self, mode):
+    def draw_partial(self, mode, diff_box=None):
         '''
         Write only the rectangle bounding the pixels of the image that have changed
         since the last call to draw_full or draw_partial
         '''
 
+        begin = time.time()
         if self.prev_frame is None:  # first call since initialization
             self.draw_full(mode)
-
-        if mode in low_bpp_modes:
-            round_box = 8
-        else:
-            round_box = 4
-
+        
         frame = self._get_frame_buf()
 
-        # compute diff for this frame
-        diff_box = self._compute_diff_box(self.prev_frame, frame, round_to=round_box)
+        if diff_box is None:
+            if mode in low_bpp_modes:
+                round_box = 8
+            else:
+                round_box = 4
+
+            # compute diff for this frame
+            diff_box = self._compute_diff_box(self.prev_frame, frame, round_to=round_box)
 
         if self.track_gray:
             self.gray_change_bbox = self._merge_bbox(self.gray_change_bbox, diff_box)
@@ -123,6 +127,7 @@ class AutoDisplay:
 
         # if it is, nothing to do
         if diff_box is not None:
+            # diff_box = (1152, 107, 1200, 187)
             buf = frame.crop(diff_box)
 
             # if we are using a black/white only mode, any pixels that changed should be
@@ -132,8 +137,13 @@ class AutoDisplay:
 
             xy = (diff_box[0], diff_box[1])
             dims = (diff_box[2]-diff_box[0], diff_box[3]-diff_box[1])
-
-            self.update(buf.tobytes(), xy, dims, mode)
+            
+            end = time.time()
+            print("computing diff box: ", end-begin)
+            begin = time.time()
+            self.update(buf.tobytes(), xy, dims, mode, pixel_format=PixelModes.M_4BPP)
+            end = time.time()
+            print("computing update: ", end-begin)
 
         self.prev_frame = frame
 

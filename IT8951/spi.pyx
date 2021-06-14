@@ -221,6 +221,7 @@ cdef class SPI:
         args : list(int), optional
             Arguments for the command
         '''
+        self.wait_ready()
         self.write(0x6000, [cmd])  # 0x6000 is preamble
         for arg in args:
             self.write_data([arg])
