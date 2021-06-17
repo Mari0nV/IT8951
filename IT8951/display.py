@@ -139,10 +139,7 @@ class AutoDisplay:
             xy = (diff_box[0], diff_box[1])
             dims = (diff_box[2]-diff_box[0], diff_box[3]-diff_box[1])
             
-            begin = time.time()
             await self.update(buf.tobytes(), xy, dims, mode, pixel_format=PixelModes.M_4BPP)
-            end = time.time()
-            print("computing update: ", end-begin)
 
         self.prev_frame = frame
 
