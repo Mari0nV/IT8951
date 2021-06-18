@@ -139,7 +139,7 @@ class AutoDisplay:
             xy = (diff_box[0], diff_box[1])
             dims = (diff_box[2]-diff_box[0], diff_box[3]-diff_box[1])
             
-            await self.update(buf.tobytes(), xy, dims, mode, pixel_format=PixelModes.M_4BPP)
+            await self.update(buf.tobytes(), xy, dims, mode)
 
         self.prev_frame = frame
 
@@ -275,7 +275,7 @@ class VirtualEPDDisplay(AutoDisplay):
     def __del__(self):
         self.root.destroy()
 
-    def update(self, data, xy, dims, mode):
+    async def update(self, data, xy, dims, mode):
         data_img = Image.frombytes(self._get_frame_buf().mode, dims, bytes(data))
         self.pil_img.paste(data_img, box=xy)
         self.tk_img = self.photoimage(self.pil_img)
@@ -283,3 +283,4 @@ class VirtualEPDDisplay(AutoDisplay):
 
         # allow Tk to do whatever it needs to do
         self.root.update()
+        await asyncio.sleep(0.01)
