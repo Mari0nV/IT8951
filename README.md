@@ -4,6 +4,8 @@ This Python 3 module implements a driver for the IT8951 e-paper controller, via 
 The driver was developed using the 6-inch e-Paper HAT from Waveshare. It hopefully will work for
 other (related) hardware too.
 
+## Installation
+
 To install, clone the repository, enter the directory and run
 ```
 pip install -r requirements.txt
@@ -11,6 +13,25 @@ pip install ./
 ```
 
 Make sure that SPI is enabled in `raspi-config`.
+
+### Setup on Arch Linux
+
+If there are errors related to ```gcc```, you can try:
+```
+sudo pacman -Sy gcc. # Fix 1
+sudo pacman -Sy base-devel  # Fix 2 
+sudo pacman -Sy python3 cmake  # Fix 3 
+```
+
+If the error is still there, it can come from a regression in Python 3.10. Install previous version:
+``` 
+asdf install python 3.9.13
+```
+
+Then in the IT8951 folder:
+```
+asdf local python 3.9.13
+```
 
 ---
 
